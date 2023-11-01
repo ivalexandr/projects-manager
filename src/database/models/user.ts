@@ -26,9 +26,6 @@ export class User {
   })
   email: string;
 
-  @Prop({ unique: true })
-  salt: string;
-
   @Prop({ default: Date.now })
   createdAt: Date;
 }

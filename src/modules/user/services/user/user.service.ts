@@ -1,7 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { CreateUser } from 'src/database/common/create-user';
+import { CreateUserDto } from 'src/database/dto/create-user-dto';
 import { User } from 'src/database/models/user';
 
 @Injectable()
@@ -10,13 +14,24 @@ export class UserService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async create(data: CreateUser) {
+  async create(data: CreateUserDto) {
     try {
       const createUser = new this.userModel(data);
       return await createUser.save();
     } catch (error) {
       if (error instanceof mongoose.Error.ValidationError) {
         throw new BadRequestException(error.message);
+      }
+    }
+  }
+
+  async getUser(email: string) {
+    try {
+      const user = await this.userModel.findOne({ email });
+      return user;
+    } catch (error) {
+      if (error instanceof mongoose.Error.DocumentNotFoundError) {
+        throw new NotFoundException(error.message);
       }
     }
   }
