@@ -1,0 +1,25 @@
+version: '3'
+services:
+  app:
+    container_name: projects-manager
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    command: ["npm", "run", "start:dev"]
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodbData:/data/db
+    env_file:
+      - .env
