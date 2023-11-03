@@ -28,6 +28,12 @@ export class User {
 
   @Prop({ default: Date.now })
   createdAt: Date;
+
+  @Prop({ type: Object })
+  refreshToken: {
+    token: string;
+    expiresAt: Date;
+  };
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
