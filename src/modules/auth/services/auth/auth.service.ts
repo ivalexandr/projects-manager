@@ -5,14 +5,14 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { CreateUserDto } from 'src/database/dto/create-user-dto';
-import { UserService } from 'src/modules/user/services/user/user.service';
-import { LoginUserDto } from 'src/database/dto/login-user-dto';
 import * as bcrypt from 'bcrypt';
-import { JwtPayload } from 'src/database/common/jwt-payload';
 import { JwtService } from '../jwt/jwt.service';
-import { ResponseUserDto } from 'src/database/dto/response-user-dto';
-import { RefreshTokenDto } from 'src/database/dto/refresh-token-dto';
+import { JwtPayload } from '../../../../database/common/jwt-payload';
+import { CreateUserDto } from '../../../../database/dto/create-user-dto';
+import { LoginUserDto } from '../../../../database/dto/login-user-dto';
+import { RefreshTokenDto } from '../../../../database/dto/refresh-token-dto';
+import { ResponseUserDto } from '../../../../database/dto/response-user-dto';
+import { UserService } from '../../../user/services/user/user.service';
 
 @Injectable()
 export class AuthService {

@@ -10,10 +10,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from '../../services/auth/auth.service';
-import { CreateUserDto } from 'src/database/dto/create-user-dto';
+import { CreateUserDto } from '../../../../database/dto/create-user-dto';
+import { LoginUserDto } from '../../../../database/dto/login-user-dto';
+import { RefreshTokenDto } from '../../../../database/dto/refresh-token-dto';
 import { Response } from 'express';
-import { LoginUserDto } from 'src/database/dto/login-user-dto';
-import { RefreshTokenDto } from 'src/database/dto/refresh-token-dto';
 
 @Controller('auth')
 export class AuthController {
