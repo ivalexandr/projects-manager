@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { CreateUserDto } from 'src/database/dto/create-user-dto';
-import { User } from 'src/database/models/user';
 import { JwtService } from '../../../auth/services/jwt/jwt.service';
+import { CreateUserDto } from '../../../../database/dto/create-user-dto';
+import { User } from '../../../../database/models/user';
 
 @Injectable()
 export class UserService {
