@@ -1,0 +1,29 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Project {
+  id: ID!
+  title: String!
+  description: String!
+}
+
+type Query {
+  projectQuery(id: ID!): Project!
+}
+
+type Mutation {
+  createProject(create: CreateProjectInput!): Project!
+  updateProject(update: UpdateProjectInput!): Project!
+}
+
+input CreateProjectInput {
+  title: String!
+  description: String!
+}
+
+input UpdateProjectInput {
+  id: String!
+  title: String
+  description: String
+}

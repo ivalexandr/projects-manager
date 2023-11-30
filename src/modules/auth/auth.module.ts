@@ -4,6 +4,8 @@ import { AuthService } from './services/auth/auth.service';
 import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtService } from './services/jwt/jwt.service';
+import { JwtGuard } from './guards/jwt/jwt.guard';
+import { JwtGraphqlGuard } from './guards/jwt-graphql/jwt-graphql.guard';
 
 @Module({
   imports: [
@@ -19,7 +21,7 @@ import { JwtService } from './services/jwt/jwt.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtService],
-  exports: [JwtService],
+  providers: [AuthService, JwtService, JwtGuard, JwtGraphqlGuard],
+  exports: [JwtService, JwtGuard, JwtGraphqlGuard],
 })
 export class AuthModule {}
