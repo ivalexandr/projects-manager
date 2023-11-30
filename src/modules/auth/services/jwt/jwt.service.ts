@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService as jwt } from '@nestjs/jwt';
 import { JwtPayload } from 'src/database/common/jwt-payload';
 import { RefreshToken } from 'src/database/common/refresh-token';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 } from 'uuid';
 
 @Injectable()
 export class JwtService {
@@ -19,7 +19,7 @@ export class JwtService {
   async validateJwt(token: string) {
     try {
       return this.jwtService.verifyAsync(token, {
-        secret: process.env.JST_SECRET,
+        secret: process.env.JWT_SECRET,
       });
     } catch (error) {
       throw new UnauthorizedException(error);
@@ -28,7 +28,7 @@ export class JwtService {
 
   createRefreshToken(): RefreshToken {
     return {
-      token: uuidv4(),
+      token: v4(),
       expiresAt: new Date(Date.now() + Number(process.env.REFRESH_EXPIRES)),
     };
   }
