@@ -18,9 +18,15 @@ export class UserService {
 
   async create(data: CreateUserDto) {
     try {
-      const createUser = new this.userModel(data);
-      createUser.refreshToken = this.jwtService.createRefreshToken();
-      return await createUser.save();
+      const createdUser = {
+        email: data.email,
+        password: data.password,
+        refreshToken: this.jwtService.createRefreshToken(),
+      } as User;
+
+      const createUser = await this.userModel.create(createdUser);
+
+      return createUser;
     } catch (error) {
       if (error instanceof mongoose.Error.ValidationError) {
         throw new BadRequestException(error.message);
@@ -40,14 +46,17 @@ export class UserService {
   }
 
   async updateRefreshToken(userId: string) {
-    try {
-      const user = await this.userModel.findById(userId);
-      user.refreshToken = this.jwtService.createRefreshToken();
-      return await user.save();
-    } catch (error) {
-      if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        throw new NotFoundException(error.message);
-      }
+    const updatedUser = await this.userModel.updateOne(
+      { _id: userId },
+      { $set: { refreshToken: this.jwtService.createRefreshToken() } },
+    );
+
+    if (updatedUser.modifiedCount === 0) {
+      throw new NotFoundException(
+        `User with ID ${userId} not found or name was not modified`,
+      );
     }
+
+    return await this.userModel.findById(userId);
   }
 }
