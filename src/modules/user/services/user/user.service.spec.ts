@@ -8,12 +8,21 @@ import { User, UserDocument } from '../../../../database/models/user';
 import { JwtService } from '../../../auth/services/jwt/jwt.service';
 import { RefreshToken } from '../../../../database/common/refresh-token';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import * as uuid from 'uuid';
+import mockadate from 'mockdate';
+
+jest.mock('uuid');
 
 describe('UserService', () => {
   let userService: UserService;
   let jwtService: MockProxy<JwtService>;
   let userModel: MockProxy<Model<UserDocument>>;
+  let eventEmmitter: MockProxy<EventEmitter2>;
 
+  const mockCreatedDate = new Date(Date.now());
+
+  const username = 'mock-username';
   const createUserDto: CreateUserDto = {
     email: 'test@test.com',
     password: 'Password123!',
@@ -29,13 +38,15 @@ describe('UserService', () => {
     email: createUserDto.email,
     password: createUserDto.password,
     refreshToken: token,
-    username: 'Ben',
+    username,
   } as unknown as UserDocument;
 
   const createUserModel = {
     email: createdUser.email,
     password: createdUser.password,
     refreshToken: createdUser.refreshToken,
+    username,
+    createdAt: mockCreatedDate,
   } as User;
 
   beforeEach(async () => {
@@ -50,6 +61,10 @@ describe('UserService', () => {
           provide: getModelToken(User.name),
           useValue: mock<Model<UserDocument>>(),
         },
+        {
+          provide: EventEmitter2,
+          useValue: mock<EventEmitter2>(),
+        },
       ],
     }).compile();
 
@@ -58,6 +73,7 @@ describe('UserService', () => {
       getModelToken(User.name),
     );
     jwtService = module.get<MockProxy<JwtService>>(JwtService);
+    eventEmmitter = module.get<MockProxy<EventEmitter2>>(EventEmitter2);
   });
 
   afterAll(() => {
@@ -66,20 +82,30 @@ describe('UserService', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    mockadate.reset();
   });
 
   describe('create', () => {
     it('should create a new user', async () => {
+      const mockCreatedUser = {
+        ...createdUser,
+      } as UserDocument;
+
       jwtService.createRefreshToken.mockReturnValue(token);
-      userModel.create.mockResolvedValue([createdUser]);
+      mockadate.set(mockCreatedDate);
+      const uuidSpy = jest.spyOn(uuid, 'v4').mockReturnValue(username);
+
+      userModel.create.mockResolvedValue(mockCreatedUser as any);
 
       const result = await userService.create(createUserDto);
 
+      expect(uuidSpy).toHaveBeenCalled();
       expect(userModel.create).toHaveBeenCalledWith(createUserModel);
       expect(jwtService.createRefreshToken).toHaveBeenCalled();
-      expect(result[0].email).toEqual(createUserDto.email);
-      expect(result[0].password).toEqual(createUserDto.password);
-      expect(result[0].refreshToken).toEqual(token);
+      expect(result).toEqual(mockCreatedUser);
+      expect(result.email).toEqual(createUserDto.email);
+      expect(result.password).toEqual(createUserDto.password);
+      expect(result.refreshToken).toEqual(token);
     });
 
     it('should handle ValidationError', async () => {
@@ -171,12 +197,12 @@ describe('UserService', () => {
     it('should return user by username', async () => {
       userModel.findOne.mockResolvedValue(createdUser);
 
-      const result = await userService.findUserByUsername('Ben');
+      const result = await userService.findUserByUsername(username);
 
       expect(result).toEqual(createdUser);
-      expect(result.username).toBe('Ben');
+      expect(result.username).toBe(username);
       expect(userModel.findOne).toHaveBeenCalledWith({
-        username: 'Ben',
+        username,
       });
     });
 
@@ -187,7 +213,7 @@ describe('UserService', () => {
       });
 
       try {
-        await userService.findUserByUsername('Ben');
+        await userService.findUserByUsername(username);
       } catch (error) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe(
@@ -233,8 +259,9 @@ describe('UserService', () => {
       const updatedUser = {
         ...createdUser,
         teams: ['12345678'],
-      } as UserDocument;
+      } as unknown as UserDocument;
 
+      eventEmmitter.emitAsync.mockReturnThis();
       userModel.findByIdAndUpdate.mockResolvedValue(updatedUser);
 
       const result = await userService.addUserForTeam(userId, teamId);
@@ -242,8 +269,9 @@ describe('UserService', () => {
       expect(result).toEqual(updatedUser);
       expect(result.teams).toEqual(updatedUser.teams);
       expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(userId, {
-        $push: { teams: teamId },
+        $addToSet: { teams: teamId },
       });
+      expect(eventEmmitter.emitAsync).toHaveBeenCalledTimes(1);
     });
 
     it('should handle DocumentBotFound', async () => {
@@ -277,7 +305,7 @@ describe('UserService', () => {
           username: 'John',
           teams: [teamId],
         },
-      ] as UserDocument[];
+      ] as unknown as UserDocument[];
 
       userModel.find.mockResolvedValue(arrayUsersWithTeam);
 
