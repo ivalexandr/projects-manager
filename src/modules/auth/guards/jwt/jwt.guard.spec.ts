@@ -91,6 +91,7 @@ describe('JwtGuard', () => {
     const payload: JwtPayload = {
       id: '1',
       email: 'test@test.ru',
+      username: 'mock-username',
     };
 
     jwtService.validateJwt.mockResolvedValue(payload);

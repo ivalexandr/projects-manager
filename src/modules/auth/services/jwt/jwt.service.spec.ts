@@ -15,6 +15,7 @@ describe('JwtService', () => {
   const jwtPayload: JwtPayload = {
     email: 'test@test.com',
     id: '1',
+    username: 'test',
   };
 
   beforeEach(async () => {
