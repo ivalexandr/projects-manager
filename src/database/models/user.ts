@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
+import { Team } from './team';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -16,6 +17,7 @@ export class User {
 
   @Prop({
     required: true,
+    unique: true,
     validate: {
       validator: function (value: string) {
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -26,7 +28,7 @@ export class User {
   })
   email: string;
 
-  @Prop({ default: Date.now })
+  @Prop()
   createdAt: Date;
 
   @Prop({ type: Object })
@@ -34,6 +36,9 @@ export class User {
     token: string;
     expiresAt: Date;
   };
+
+  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Team' }] })
+  teams: Team[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
