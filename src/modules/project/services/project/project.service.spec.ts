@@ -5,14 +5,16 @@ import mongoose, { Model } from 'mongoose';
 import { Project, ProjectDocument } from '../../../../database/models/project';
 import { getModelToken } from '@nestjs/mongoose';
 import { TCreateProject } from '../../../../types/project/create-project.type';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { TUpdateProject } from '../../../../types/project/update-project.type';
-import { TeamService } from '../../../team/services/team/team.service';
 import { TeamDocument } from '../../../../database/models/team';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { TeamService } from '../../../team/services/team/team.service';
 
 describe('ProjectService', () => {
   let projectService: ProjectService;
   let projectModel: MockProxy<Model<ProjectDocument>>;
+  let eventEmmitter: MockProxy<EventEmitter2>;
   let teamService: MockProxy<TeamService>;
 
   const projectFromDb = {
@@ -38,6 +40,10 @@ describe('ProjectService', () => {
           useValue: mock<Model<ProjectDocument>>(),
         },
         {
+          provide: EventEmitter2,
+          useValue: mock<EventEmitter2>(),
+        },
+        {
           provide: TeamService,
           useValue: mock<TeamService>(),
         },
@@ -49,6 +55,7 @@ describe('ProjectService', () => {
       getModelToken(Project.name),
     );
     teamService = module.get<MockProxy<TeamService>>(TeamService);
+    eventEmmitter = module.get<MockProxy<EventEmitter2>>(EventEmitter2);
   });
 
   describe('create', () => {
@@ -68,6 +75,8 @@ describe('ProjectService', () => {
       projectModel.create.mockResolvedValue(projectFromDb as any);
       projectModel.findByIdAndUpdate.mockResolvedValue(updatedProject);
 
+      eventEmmitter.emitAsync.mockReturnThis();
+
       const result = await projectService.create(createProject);
 
       expect(projectModel.create).toHaveBeenCalled();
@@ -79,6 +88,7 @@ describe('ProjectService', () => {
       );
       expect(result).not.toEqual(projectFromDb);
       expect(result.team).not.toBe(projectFromDb.team);
+      expect(eventEmmitter.emitAsync).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if ValidationError', async () => {
@@ -90,6 +100,7 @@ describe('ProjectService', () => {
       const errorMessage = 'Validation failed';
 
       teamService.findById.mockResolvedValue(teamFromBd);
+
       projectModel.create.mockRejectedValue(
         new mongoose.Error.ValidationError({
           message: errorMessage,
@@ -102,11 +113,26 @@ describe('ProjectService', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe(errorMessage);
-        expect(teamService.findById).toHaveBeenCalled();
+        expect(teamService.findById).toHaveBeenCalledWith(createProject.teamId);
       }
     });
 
-    it('should throw BadRequestException if DocumentNotFoundError', async () => {});
+    it('should throw BadRequestException if DocumentNotFoundError', async () => {
+      const createProject: TCreateProject = {
+        title: 'some project',
+        description: 'some description',
+        teamId: '1234',
+      };
+
+      teamService.findById.mockResolvedValue(null);
+
+      try {
+        await projectService.create(createProject);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(`team ${createProject.teamId} not found`);
+      }
+    });
   });
 
   describe('findById', () => {
