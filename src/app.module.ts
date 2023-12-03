@@ -6,10 +6,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ProjectModule } from './modules/project/project.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
+import { TeamModule } from './modules/team/team.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.DB_CONNECTION),
+    MongooseModule.forRoot(process.env.DB_CONNECTION, {}),
     ConfigModule.forRoot(),
     AuthModule,
     UserModule,
@@ -18,6 +20,8 @@ import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
       driver: ApolloDriver,
       autoSchemaFile: { path: 'schema.gql' },
     }),
+    TeamModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [],
   providers: [],

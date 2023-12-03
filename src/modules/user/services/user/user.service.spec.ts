@@ -25,9 +25,11 @@ describe('UserService', () => {
 
   const createdUser = {
     _id: '123',
+    id: '123',
     email: createUserDto.email,
     password: createUserDto.password,
     refreshToken: token,
+    username: 'Ben',
   } as unknown as UserDocument;
 
   const createUserModel = {
@@ -100,7 +102,7 @@ describe('UserService', () => {
   });
 
   describe('getUser', () => {
-    it('should return user by id', async () => {
+    it('should return user by email', async () => {
       userModel.findOne.mockResolvedValue(createdUser);
 
       const result = await userService.getUser(createUserDto.email);
@@ -160,6 +162,147 @@ describe('UserService', () => {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe(
           `User with ID ${createdUser.id} not found or name was not modified`,
+        );
+      }
+    });
+  });
+
+  describe('findUserByUsername', () => {
+    it('should return user by username', async () => {
+      userModel.findOne.mockResolvedValue(createdUser);
+
+      const result = await userService.findUserByUsername('Ben');
+
+      expect(result).toEqual(createdUser);
+      expect(result.username).toBe('Ben');
+      expect(userModel.findOne).toHaveBeenCalledWith({
+        username: 'Ben',
+      });
+    });
+
+    it('should handle DocumentNotFoundError', async () => {
+      const errorMessage = 'Document not found';
+      userModel.findOne.mockImplementation(() => {
+        throw new mongoose.Error.DocumentNotFoundError(errorMessage);
+      });
+
+      try {
+        await userService.findUserByUsername('Ben');
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(
+          new mongoose.Error.DocumentNotFoundError(errorMessage).message,
+        );
+      }
+    });
+  });
+
+  describe('findById', () => {
+    it('should return user by id', async () => {
+      userModel.findById.mockResolvedValue(createdUser);
+
+      const result = await userService.findById('123');
+
+      expect(result).toEqual(createdUser);
+      expect(result.id).toBe('123');
+      expect(userModel.findById).toHaveBeenCalledWith('123');
+    });
+
+    it('should handle DocumentNotFoundError', async () => {
+      const errorMessage = 'Document not found';
+      userModel.findById.mockRejectedValue(
+        new mongoose.Error.DocumentNotFoundError(errorMessage),
+      );
+
+      try {
+        await userService.findById('123');
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(
+          new mongoose.Error.DocumentNotFoundError(errorMessage).message,
+        );
+      }
+    });
+  });
+
+  describe('addUserForTeam', () => {
+    const userId = '123';
+    const teamId = '12345678';
+
+    it('should add user to team', async () => {
+      const updatedUser = {
+        ...createdUser,
+        teams: ['12345678'],
+      } as UserDocument;
+
+      userModel.findByIdAndUpdate.mockResolvedValue(updatedUser);
+
+      const result = await userService.addUserForTeam(userId, teamId);
+
+      expect(result).toEqual(updatedUser);
+      expect(result.teams).toEqual(updatedUser.teams);
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(userId, {
+        $push: { teams: teamId },
+      });
+    });
+
+    it('should handle DocumentBotFound', async () => {
+      const errorMessage = 'Document not found';
+      userModel.findByIdAndUpdate.mockRejectedValue(
+        new mongoose.Error.DocumentNotFoundError(errorMessage),
+      );
+
+      try {
+        await userService.addUserForTeam(userId, teamId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(
+          new mongoose.Error.DocumentNotFoundError(errorMessage).message,
+        );
+      }
+    });
+  });
+
+  describe('getUsersWithTeam', () => {
+    it('should return array of users with team', async () => {
+      const teamId = '12345678';
+      const arrayUsersWithTeam = [
+        {
+          id: '123',
+          username: 'Ben',
+          teams: [teamId],
+        },
+        {
+          id: '456',
+          username: 'John',
+          teams: [teamId],
+        },
+      ] as UserDocument[];
+
+      userModel.find.mockResolvedValue(arrayUsersWithTeam);
+
+      const result = await userService.getUsersWithTeam(teamId);
+
+      expect(result).toEqual(arrayUsersWithTeam);
+      expect(userModel.find).toHaveBeenCalledTimes(1);
+      expect(userModel.find).toHaveBeenCalledWith({
+        teams: { $in: [teamId] },
+      });
+    });
+
+    it('should handle DocumentNotFoundError', async () => {
+      const errorMessage = 'Document not found';
+      const teamId = '12345678';
+      userModel.find.mockRejectedValue(
+        new mongoose.Error.DocumentNotFoundError(errorMessage),
+      );
+
+      try {
+        await userService.getUsersWithTeam(teamId);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(
+          new mongoose.Error.DocumentNotFoundError(errorMessage).message,
         );
       }
     });
