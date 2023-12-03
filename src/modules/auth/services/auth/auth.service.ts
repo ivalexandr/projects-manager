@@ -40,18 +40,23 @@ export class AuthService {
       password: await bcrypt.hash(createUser.password, salt),
     };
 
-    const userFromBd = await this.userService.create(user);
+    try {
+      const userFromBd = await this.userService.create(user);
 
-    const payload: JwtPayload = {
-      id: userFromBd.id,
-      email: userFromBd.email,
-    };
+      const payload: JwtPayload = {
+        id: userFromBd.id,
+        email: userFromBd.email,
+        username: userFromBd.username,
+      };
 
-    return {
-      email: userFromBd.email,
-      access_token: await this.jwtService.createJwt(payload),
-      refresh_token: userFromBd.refreshToken.token,
-    };
+      return {
+        email: userFromBd.email,
+        access_token: await this.jwtService.createJwt(payload),
+        refresh_token: userFromBd.refreshToken.token,
+      };
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
   }
 
   async login(loginUserDto: LoginUserDto): Promise<ResponseUserDto> {
@@ -70,6 +75,7 @@ export class AuthService {
     const payload: JwtPayload = {
       id: user.id,
       email: user.email,
+      username: user.username,
     };
 
     return {
@@ -97,6 +103,7 @@ export class AuthService {
     const payload: JwtPayload = {
       id: user.id,
       email: user.email,
+      username: user.username,
     };
 
     const refreshTokenUser = await this.userService.updateRefreshToken(user.id);

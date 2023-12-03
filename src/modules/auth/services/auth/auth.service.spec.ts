@@ -38,6 +38,7 @@ describe('AuthService', () => {
     _id: '123',
     email: createUserDto.email,
     password: createUserDto.password,
+    username: 'sdfsdfds',
     refreshToken: {
       token: responsedUser.refresh_token,
     },
@@ -46,6 +47,7 @@ describe('AuthService', () => {
   const jwtPayloadMock: JwtPayload = {
     id: userFromDb.id,
     email: userFromDb.email,
+    username: userFromDb.username,
   };
 
   beforeEach(async () => {

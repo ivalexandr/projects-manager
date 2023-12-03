@@ -15,10 +15,14 @@ export class ProjectResolver {
 
   @UseGuards(JwtGraphqlGuard)
   @Query(() => Project)
-  async projectQuery(
+  async getProject(
     @Args({ name: 'id', type: () => ID }) id: string,
   ): Promise<ProjectFromDb> {
-    return await this.projectService.findById(id);
+    const result = await this.projectService.findById(id);
+    return await result.populate({
+      path: 'team',
+      populate: { path: 'leader' },
+    });
   }
 
   @UseGuards(JwtGraphqlGuard)
@@ -26,7 +30,11 @@ export class ProjectResolver {
   async createProject(
     @Args('create') create: CreateProjectInput,
   ): Promise<ProjectFromDb> {
-    return this.projectService.create(create);
+    const result = await this.projectService.create(create);
+    return await result.populate({
+      path: 'team',
+      populate: { path: 'leader' },
+    });
   }
 
   @UseGuards(JwtGraphqlGuard)

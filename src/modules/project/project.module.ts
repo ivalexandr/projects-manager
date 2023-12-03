@@ -2,13 +2,17 @@ import { Module } from '@nestjs/common';
 import { ProjectService } from './services/project/project.service';
 import { ProjectResolver } from './resolvers/project.resolver';
 import { MongooseModule } from '@nestjs/mongoose';
-import { projectScheme } from '../../database/models/project';
+import { Project, projectScheme } from '../../database/models/project';
+
+import { JwtGraphqlGuard } from '../auth/guards/jwt-graphql/jwt-graphql.guard';
 import { JwtService } from '../auth/services/jwt/jwt.service';
+import { TeamModule } from '../team/team.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: 'Project', schema: projectScheme }]),
+    TeamModule,
+    MongooseModule.forFeature([{ schema: projectScheme, name: Project.name }]),
   ],
-  providers: [ProjectResolver, ProjectService, JwtService],
+  providers: [JwtService, JwtGraphqlGuard, ProjectResolver, ProjectService],
 })
 export class ProjectModule {}
