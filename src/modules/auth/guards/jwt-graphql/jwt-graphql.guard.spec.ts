@@ -100,6 +100,7 @@ describe('JwtGuard', () => {
     const payload: JwtPayload = {
       id: '1',
       email: 'test@test.ru',
+      username: 'mock-username',
     };
 
     gqlExecutionContextMock.create.mockReturnValue(contextMock);
