@@ -32,6 +32,7 @@
     "@nestjs/jwt": "^10.1.1",
     "@nestjs/mongoose": "^10.0.2",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^7.1.16",
     "bcrypt": "^5.1.1",
     "graphql": "^16.8.1",
     "mongoose": "^7.6.6",
