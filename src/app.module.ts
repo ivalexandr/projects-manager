@@ -8,6 +8,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
 import { TeamModule } from './modules/team/team.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { StaticFilesModule } from './modules/static-files/static-files.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     }),
     TeamModule,
     EventEmitterModule.forRoot(),
+    StaticFilesModule,
   ],
   controllers: [],
   providers: [],
