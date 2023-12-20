@@ -24,7 +24,13 @@ export class TeamResolver {
 
   @Query(() => Team)
   async getTeam(@Args('id') teamId: string) {
-    const result = await this.teamService.findById(teamId);
-    return await (await result.populate('leader')).populate('projects');
+    return await this.teamService.findById(teamId);
+  }
+
+  @UseGuards(JwtGraphqlGuard)
+  @Query(() => [Team])
+  async getTeamForUser(@Context() { req }: { req: Request }) {
+    const userId = req['user']['id'] as string;
+    return await this.teamService.findAllTeamByUserId(userId);
   }
 }
