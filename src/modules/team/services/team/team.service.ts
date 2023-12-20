@@ -18,6 +18,9 @@ import {
   TCreateProjectPayload,
   TCreateTeamPayload,
 } from '../../../../events/events';
+import * as uuid from 'uuid';
+import * as path from 'path';
+import { writeFile } from 'fs/promises';
 
 @Injectable()
 export class TeamService {
@@ -28,11 +31,14 @@ export class TeamService {
 
   async create(createTeam: TCreateTeam) {
     try {
+      const avatar = await this.convertAndSaveImage(createTeam.avatar);
+      const banner = await this.convertAndSaveImage(createTeam.banner);
+
       const team = {
         name: createTeam.name,
         description: createTeam.description,
-        avatar: createTeam.avatar || '',
-        banner: createTeam.banner || '',
+        avatar,
+        banner,
         isPublic: createTeam.isPublic || true,
         leader: createTeam.leader,
         createdAt: new Date(Date.now()),
@@ -58,12 +64,48 @@ export class TeamService {
 
   async findById(id: string) {
     try {
-      return await this.teamModel.findById(id);
+      return await this.teamModel
+        .findById(id)
+        .populate('members')
+        .populate('leader')
+        .populate('projects')
+        .exec();
     } catch (error) {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         throw new BadRequestException(error.message);
       }
     }
+  }
+
+  async findAllTeamByUserId(userId: string) {
+    try {
+      const result = await this.teamModel
+        .find({ members: userId })
+        .populate('members')
+        .populate('leader')
+        .populate('projects')
+        .exec();
+      if (!result || result.length === 0) {
+        throw new BadRequestException('No teams found for this user');
+      }
+      return result;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  private async convertAndSaveImage(base64?: string) {
+    if (base64) {
+      const fileName = `${uuid.v4()}.jpg`;
+      const data = base64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(data, 'base64');
+
+      const uploadPath = path.join(`${process.cwd()}/src`, 'uploads');
+
+      await writeFile(path.join(uploadPath, fileName), buffer);
+      return fileName;
+    }
+    return '';
   }
 
   @OnEvent(ADD_USER_TO_TEAM_EVENT, { async: true })
