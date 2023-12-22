@@ -8,7 +8,7 @@ export type TeamDocument = HydratedDocument<Team>;
 
 @Schema()
 export class Team {
-  @Prop()
+  @Prop({ unique: true, minlength: 3, maxlength: 12 })
   name: string;
 
   @Prop()

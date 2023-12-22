@@ -1,7 +1,12 @@
 import { Args, Context, Mutation, Resolver, Query } from '@nestjs/graphql';
 import { CreateTeamInput, Team } from '../../../graphql/models/team.model';
 import { TeamService } from '../services/team/team.service';
-import { UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtGraphqlGuard } from '../../auth/guards/jwt-graphql/jwt-graphql.guard';
 
 @Resolver(() => Team)
@@ -14,12 +19,19 @@ export class TeamResolver {
     @Args('create') create: CreateTeamInput,
     @Context() { req }: { req: Request },
   ) {
-    const leader = req['user']['id'] as string;
-    const result = await this.teamService.create({
-      leader,
-      ...create,
-    });
-    return await result.populate('leader');
+    try {
+      const leader = req['user']['id'] as string;
+      const result = await this.teamService.create({
+        leader,
+        ...create,
+      });
+      return result;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw new HttpException(error.message, HttpStatus.CONFLICT);
+      }
+      throw error;
+    }
   }
 
   @Query(() => Team)
