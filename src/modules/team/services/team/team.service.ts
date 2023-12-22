@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { MongoError } from 'mongodb';
 import { Team } from '../../../../database/models/team';
 import { TCreateTeam } from '../../../../types/team/create-team.type';
 import mongoose, { Model } from 'mongoose';
@@ -39,26 +40,31 @@ export class TeamService {
         description: createTeam.description,
         avatar,
         banner,
-        isPublic: createTeam.isPublic || true,
+        isPublic: createTeam.isPublic,
         leader: createTeam.leader,
         createdAt: new Date(Date.now()),
+        members: [createTeam.leader],
       } as unknown as Team;
 
       const teamFromDb = await this.teamModel.create(team);
-      await this.teamModel.findByIdAndUpdate(teamFromDb.id, {
-        $push: { members: createTeam.leader },
-      });
 
       await this.eventEmmiter.emitAsync(CREATE_TEAM_EVENT, {
         userId: createTeam.leader,
         teamId: teamFromDb.id,
       } as TCreateTeamPayload);
 
-      return teamFromDb;
+      return await this.teamModel
+        .findById(teamFromDb._id)
+        .populate(['members', 'leader', 'projects'])
+        .exec();
     } catch (error) {
+      if (error instanceof MongoError && error.code === 11000) {
+        throw new BadRequestException('Team with this name already exist');
+      }
       if (error instanceof mongoose.Error.ValidationError) {
         throw new BadRequestException(error.message);
       }
+      throw error;
     }
   }
 
@@ -66,9 +72,7 @@ export class TeamService {
     try {
       return await this.teamModel
         .findById(id)
-        .populate('members')
-        .populate('leader')
-        .populate('projects')
+        .populate(['members', 'leader', 'projects'])
         .exec();
     } catch (error) {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
@@ -81,9 +85,7 @@ export class TeamService {
     try {
       const result = await this.teamModel
         .find({ members: userId })
-        .populate('members')
-        .populate('leader')
-        .populate('projects')
+        .populate(['members', 'leader', 'projects'])
         .exec();
       if (!result || result.length === 0) {
         throw new BadRequestException('No teams found for this user');
