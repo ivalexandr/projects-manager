@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -22,11 +23,16 @@ import {
 import * as uuid from 'uuid';
 import * as path from 'path';
 import { writeFile } from 'fs/promises';
+import { TeamStatus } from '../../../../database/enums/team-status.enum';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { TTeamPaginated } from '../../../../types/team/team-paginated';
 
 @Injectable()
 export class TeamService {
   constructor(
     @InjectModel(Team.name) private readonly teamModel: Model<Team>,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly eventEmmiter: EventEmitter2,
   ) {}
 
@@ -94,6 +100,28 @@ export class TeamService {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+
+  async findAllActivePublicTeam(page: number, pageSize: number) {
+    const cacheKey = `activePublicTeams:${page}:${pageSize}`;
+    let result = await this.cacheManager.get<TTeamPaginated>(cacheKey);
+
+    if (!result) {
+      const condition = {
+        isPublic: true,
+        status: TeamStatus.ACTIVE,
+      };
+      const totalCount = await this.teamModel.countDocuments(condition);
+      const items = await this.teamModel
+        .find(condition)
+        .populate(['members', 'leader', 'projects'])
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .exec();
+      result = { items, totalCount };
+      await this.cacheManager.set(cacheKey, result);
+    }
+    return result;
   }
 
   private async convertAndSaveImage(base64?: string) {

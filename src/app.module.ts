@@ -17,11 +17,11 @@ import { StaticFilesModule } from './modules/static-files/static-files.module';
     AuthModule,
     UserModule,
     ProjectModule,
+    TeamModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: { path: 'schema.gql' },
     }),
-    TeamModule,
     EventEmitterModule.forRoot(),
     StaticFilesModule,
   ],

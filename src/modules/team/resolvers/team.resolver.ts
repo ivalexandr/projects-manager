@@ -1,4 +1,4 @@
-import { Args, Context, Mutation, Resolver, Query } from '@nestjs/graphql';
+import { Args, Context, Mutation, Resolver, Query, Int } from '@nestjs/graphql';
 import { CreateTeamInput, Team } from '../../../graphql/models/team.model';
 import { TeamService } from '../services/team/team.service';
 import {
@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtGraphqlGuard } from '../../auth/guards/jwt-graphql/jwt-graphql.guard';
+import { TeamActivePaginated } from '../../../graphql/models/teams-active-paginated.model';
 
 @Resolver(() => Team)
 export class TeamResolver {
@@ -44,5 +45,13 @@ export class TeamResolver {
   async getTeamForUser(@Context() { req }: { req: Request }) {
     const userId = req['user']['id'] as string;
     return await this.teamService.findAllTeamByUserId(userId);
+  }
+
+  @Query(() => TeamActivePaginated)
+  async getActivePublicTeam(
+    @Args('page', { type: () => Int }) page: number,
+    @Args('pageSize', { type: () => Int }) pageSize: number,
+  ) {
+    return await this.teamService.findAllActivePublicTeam(page, pageSize);
   }
 }
