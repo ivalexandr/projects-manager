@@ -53,11 +53,17 @@ type Project {
   team: Team!
 }
 
+type TeamActivePaginated {
+  items: [Team!]!
+  totalCount: Int!
+}
+
 type Query {
   getUser(id: String!): User!
   getProject(id: ID!): Project!
   getTeam(id: String!): Team!
   getTeamForUser: [Team!]!
+  getActivePublicTeam(page: Int!, pageSize: Int!): TeamActivePaginated!
 }
 
 type Mutation {
