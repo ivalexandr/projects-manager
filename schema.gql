@@ -61,6 +61,7 @@ type TeamActivePaginated {
 type Query {
   getUser(id: String!): User!
   getProject(id: ID!): Project!
+  getProjectsForTeam(teamId: ID!): [ProjectInTeam!]!
   getTeam(id: String!): Team!
   getTeamForUser: [Team!]!
   getActivePublicTeam(page: Int!, pageSize: Int!): TeamActivePaginated!

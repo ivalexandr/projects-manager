@@ -85,9 +85,9 @@ export class ProjectService {
     }
   }
 
-  async getProjectsWithTeam(teamId: string) {
+  async getProjectsInTeam(teamId: string) {
     try {
-      return await this.projectModel.find({ teamId: { $eq: teamId } });
+      return await this.projectModel.find({ team: teamId });
     } catch (error) {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         throw new BadRequestException(error.message);
