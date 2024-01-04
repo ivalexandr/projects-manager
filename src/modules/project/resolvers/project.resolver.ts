@@ -8,6 +8,7 @@ import { ProjectService } from '../services/project/project.service';
 import { Project as ProjectFromDb } from '../../../database/models/project';
 import { UseGuards } from '@nestjs/common';
 import { JwtGraphqlGuard } from '../../auth/guards/jwt-graphql/jwt-graphql.guard';
+import { ProjectInTeam } from '../../../graphql/models/project-in-team.model';
 
 @Resolver(() => Project)
 export class ProjectResolver {
@@ -23,6 +24,14 @@ export class ProjectResolver {
       path: 'team',
       populate: { path: 'leader' },
     });
+  }
+
+  @UseGuards(JwtGraphqlGuard)
+  @Query(() => [ProjectInTeam])
+  async getProjectsForTeam(
+    @Args({ name: 'teamId', type: () => ID }) teamId: string,
+  ) {
+    return await this.projectService.getProjectsInTeam(teamId);
   }
 
   @UseGuards(JwtGraphqlGuard)
