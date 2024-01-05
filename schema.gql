@@ -69,7 +69,7 @@ type Query {
 
 type Mutation {
   addUserToTeam(username: String!, teamId: String!): User!
-  createProject(create: CreateProjectInput!): Project!
+  createProject(create: CreateProjectInput!): ProjectInTeam!
   updateProject(update: UpdateProjectInput!): Project!
   createTeam(create: CreateTeamInput!): Team!
 }
