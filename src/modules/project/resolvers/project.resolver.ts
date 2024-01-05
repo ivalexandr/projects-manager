@@ -35,7 +35,7 @@ export class ProjectResolver {
   }
 
   @UseGuards(JwtGraphqlGuard)
-  @Mutation(() => Project)
+  @Mutation(() => ProjectInTeam)
   async createProject(
     @Args('create') create: CreateProjectInput,
   ): Promise<ProjectFromDb> {
