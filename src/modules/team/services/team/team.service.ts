@@ -27,6 +27,7 @@ import { TeamStatus } from '../../../../database/enums/team-status.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { TTeamPaginated } from '../../../../types/team/team-paginated';
+import { TeamChatService } from '../../../team-chat/services/team-chat/team-chat.service';
 
 @Injectable()
 export class TeamService {
@@ -34,6 +35,7 @@ export class TeamService {
     @InjectModel(Team.name) private readonly teamModel: Model<Team>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly eventEmmiter: EventEmitter2,
+    private readonly teamChatService: TeamChatService,
   ) {}
 
   async create(createTeam: TCreateTeam) {
@@ -41,7 +43,7 @@ export class TeamService {
       const avatar = await this.convertAndSaveImage(createTeam.avatar);
       const banner = await this.convertAndSaveImage(createTeam.banner);
 
-      const team = {
+      const teamFromDb = await this.teamModel.create({
         name: createTeam.name,
         description: createTeam.description,
         avatar,
@@ -50,19 +52,21 @@ export class TeamService {
         leader: createTeam.leader,
         createdAt: new Date(Date.now()),
         members: [createTeam.leader],
-      } as unknown as Team;
-
-      const teamFromDb = await this.teamModel.create(team);
+      });
 
       await this.eventEmmiter.emitAsync(CREATE_TEAM_EVENT, {
         userId: createTeam.leader,
         teamId: teamFromDb.id,
       } as TCreateTeamPayload);
 
-      return await this.teamModel
-        .findById(teamFromDb._id)
-        .populate(['members', 'leader', 'projects'])
-        .exec();
+      const chat = await this.teamChatService.create(teamFromDb._id.toString());
+      await this.teamModel.findByIdAndUpdate(
+        teamFromDb._id,
+        { teamChat: chat },
+        { new: true },
+      );
+
+      return await teamFromDb.populate(['members', 'leader', 'projects']);
     } catch (error) {
       if (error instanceof MongoError && error.code === 11000) {
         throw new BadRequestException('Team with this name already exist');
@@ -78,7 +82,7 @@ export class TeamService {
     try {
       return await this.teamModel
         .findById(id)
-        .populate(['members', 'leader', 'projects'])
+        .populate(['members', 'leader', 'projects', 'teamChat'])
         .exec();
     } catch (error) {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {

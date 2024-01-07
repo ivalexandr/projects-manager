@@ -1,4 +1,12 @@
-import { Args, Context, Mutation, Resolver, Query, Int } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  Mutation,
+  Resolver,
+  Query,
+  Int,
+  ID,
+} from '@nestjs/graphql';
 import { CreateTeamInput, Team } from '../../../graphql/models/team.model';
 import { TeamService } from '../services/team/team.service';
 import {
@@ -36,7 +44,7 @@ export class TeamResolver {
   }
 
   @Query(() => Team)
-  async getTeam(@Args('id') teamId: string) {
+  async getTeam(@Args('id', { type: () => ID }) teamId: string) {
     return await this.teamService.findById(teamId);
   }
 

@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtService } from './services/jwt/jwt.service';
 import { JwtGuard } from './guards/jwt/jwt.guard';
 import { JwtGraphqlGuard } from './guards/jwt-graphql/jwt-graphql.guard';
+import { WsJwtGuard } from './guards/ws-jwt-guard/ws-jwt.guard';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { JwtGraphqlGuard } from './guards/jwt-graphql/jwt-graphql.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtService, JwtGuard, JwtGraphqlGuard],
-  exports: [JwtService, JwtGuard, JwtGraphqlGuard],
+  providers: [AuthService, JwtService, JwtGuard, JwtGraphqlGuard, WsJwtGuard],
+  exports: [JwtService, JwtGuard, JwtGraphqlGuard, WsJwtGuard],
 })
 export class AuthModule {}

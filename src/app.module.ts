@@ -9,6 +9,8 @@ import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
 import { TeamModule } from './modules/team/team.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { StaticFilesModule } from './modules/static-files/static-files.module';
+import { TeamChatModule } from './modules/team-chat/team-chat.module';
+import { TeamChatMessageModule } from './modules/team-chat-message/team-chat-message.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { StaticFilesModule } from './modules/static-files/static-files.module';
     }),
     EventEmitterModule.forRoot(),
     StaticFilesModule,
+    TeamChatModule,
+    TeamChatMessageModule,
   ],
   controllers: [],
   providers: [],
