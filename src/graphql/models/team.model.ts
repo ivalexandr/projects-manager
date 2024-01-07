@@ -2,6 +2,7 @@ import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
 import { User } from './user.model';
 import { TeamStatus } from '../../database/enums/team-status.enum';
 import { ProjectInTeam } from './project-in-team.model';
+import { TeamChat } from './team-chat.model';
 
 @ObjectType()
 export class Team {
@@ -37,6 +38,9 @@ export class Team {
 
   @Field()
   createdAt: Date;
+
+  @Field(() => TeamChat)
+  teamChat: TeamChat;
 }
 
 @InputType()

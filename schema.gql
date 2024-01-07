@@ -14,6 +14,20 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type TeamChatMesssage {
+  id: ID!
+  createdAt: DateTime!
+  teamChat: TeamChat!
+  sender: User!
+  message: String!
+}
+
+type TeamChat {
+  id: ID!
+  team: Team!
+  messages: [TeamChatMesssage!]!
+}
+
 type Team {
   id: ID!
   name: String!
@@ -26,6 +40,7 @@ type Team {
   projects: [ProjectInTeam!]!
   isPublic: Boolean!
   createdAt: DateTime!
+  teamChat: TeamChat!
 }
 
 enum TeamStatus {
@@ -62,9 +77,10 @@ type Query {
   getUser(id: String!): User!
   getProject(id: ID!): Project!
   getProjectsForTeam(teamId: ID!): [ProjectInTeam!]!
-  getTeam(id: String!): Team!
+  getTeam(id: ID!): Team!
   getTeamForUser: [Team!]!
   getActivePublicTeam(page: Int!, pageSize: Int!): TeamActivePaginated!
+  getMessagesForChat(chatId: ID!, lastMessageId: ID, limit: Int): [TeamChatMesssage!]!
 }
 
 type Mutation {
