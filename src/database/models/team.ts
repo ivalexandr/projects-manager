@@ -3,6 +3,7 @@ import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
 import { TeamStatus } from '../enums/team-status.enum';
 import { User } from './user';
 import { Project } from './project';
+import { TeamChat } from './team-chat';
 
 export type TeamDocument = HydratedDocument<Team>;
 
@@ -41,6 +42,9 @@ export class Team {
 
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Project' }] })
   projects: Project[];
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'TeamChat' })
+  teamChat: TeamChat;
 }
 
 export const teamScheme = SchemaFactory.createForClass(Team);

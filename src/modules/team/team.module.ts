@@ -5,6 +5,7 @@ import { TeamService } from './services/team/team.service';
 import { TeamResolver } from './resolvers/team.resolver';
 import { JwtService } from '../auth/services/jwt/jwt.service';
 import { CacheModule } from '@nestjs/cache-manager';
+import { TeamChatModule } from '../team-chat/team-chat.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       ttl: 300000,
       max: 150,
     }),
+    TeamChatModule,
   ],
   providers: [JwtService, TeamResolver, TeamService],
   exports: [TeamService],
