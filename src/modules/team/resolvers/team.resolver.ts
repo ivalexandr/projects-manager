@@ -17,13 +17,14 @@ import {
 } from '@nestjs/common';
 import { JwtGraphqlGuard } from '../../auth/guards/jwt-graphql/jwt-graphql.guard';
 import { TeamActivePaginated } from '../../../graphql/models/teams-active-paginated.model';
+import { TeamAccess } from '../../../graphql/models/team-access.model';
 
 @Resolver(() => Team)
 export class TeamResolver {
   constructor(private readonly teamService: TeamService) {}
 
   @UseGuards(JwtGraphqlGuard)
-  @Mutation(() => Team)
+  @Mutation(() => TeamAccess)
   async createTeam(
     @Args('create') create: CreateTeamInput,
     @Context() { req }: { req: Request },
@@ -46,13 +47,6 @@ export class TeamResolver {
   @Query(() => Team)
   async getTeam(@Args('id', { type: () => ID }) teamId: string) {
     return await this.teamService.findById(teamId);
-  }
-
-  @UseGuards(JwtGraphqlGuard)
-  @Query(() => [Team])
-  async getTeamForUser(@Context() { req }: { req: Request }) {
-    const userId = req['user']['id'] as string;
-    return await this.teamService.findAllTeamByUserId(userId);
   }
 
   @Query(() => TeamActivePaginated)

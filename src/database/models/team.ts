@@ -37,9 +37,6 @@ export class Team {
   @Prop({ type: Date })
   createdAt: Date;
 
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'User' }] })
-  members: User[];
-
   @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Project' }] })
   projects: Project[];
 

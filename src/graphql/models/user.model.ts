@@ -1,5 +1,5 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
-import { Team } from './team.model';
+import { TeamAccess } from './team-access.model';
 
 @ObjectType()
 export class User {
@@ -18,6 +18,6 @@ export class User {
   @Field()
   createdAt: Date;
 
-  @Field(() => [Team])
-  teams: Team[];
+  @Field(() => [TeamAccess])
+  teamAccesses: TeamAccess[];
 }

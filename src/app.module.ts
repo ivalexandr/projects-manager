@@ -11,6 +11,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { StaticFilesModule } from './modules/static-files/static-files.module';
 import { TeamChatModule } from './modules/team-chat/team-chat.module';
 import { TeamChatMessageModule } from './modules/team-chat-message/team-chat-message.module';
+import { TeamAccessModule } from './modules/team-access/team-access.module';
 
 @Module({
   imports: [
@@ -28,8 +29,8 @@ import { TeamChatMessageModule } from './modules/team-chat-message/team-chat-mes
     StaticFilesModule,
     TeamChatModule,
     TeamChatMessageModule,
+    TeamAccessModule,
   ],
   controllers: [],
-  providers: [],
 })
 export class AppModule {}

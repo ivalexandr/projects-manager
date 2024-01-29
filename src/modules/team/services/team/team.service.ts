@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -9,39 +10,41 @@ import { MongoError } from 'mongodb';
 import { Team } from '../../../../database/models/team';
 import { TCreateTeam } from '../../../../types/team/create-team.type';
 import mongoose, { Model } from 'mongoose';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { OnEvent } from '@nestjs/event-emitter';
 import {
-  ADD_USER_TO_TEAM_EVENT,
   CHECK_TEAM_EXISTENCE_EVENT,
   CREATE_PROJECT_EVENT,
-  CREATE_TEAM_EVENT,
-  TAddUserToTeamPayload,
   TCheckTeamExistencePayload,
   TCreateProjectPayload,
-  TCreateTeamPayload,
 } from '../../../../events/events';
-import * as uuid from 'uuid';
-import * as path from 'path';
-import { writeFile } from 'fs/promises';
 import { TeamStatus } from '../../../../database/enums/team-status.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { TTeamPaginated } from '../../../../types/team/team-paginated';
 import { TeamChatService } from '../../../team-chat/services/team-chat/team-chat.service';
+import { StaticFilesService } from '../../../static-files/services/static-files/static-files.service';
+import { TeamAccessService } from '../../../team-access/services/team-access/team-access.service';
+import { TeamAccessStatus } from '../../../../database/enums/team-access-status';
+import { TeamRole } from '../../../../database/enums/team-role.enum';
 
 @Injectable()
 export class TeamService {
   constructor(
     @InjectModel(Team.name) private readonly teamModel: Model<Team>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-    private readonly eventEmmiter: EventEmitter2,
     private readonly teamChatService: TeamChatService,
+    private readonly staticFileService: StaticFilesService,
+    private readonly teamAccessService: TeamAccessService,
   ) {}
 
   async create(createTeam: TCreateTeam) {
     try {
-      const avatar = await this.convertAndSaveImage(createTeam.avatar);
-      const banner = await this.convertAndSaveImage(createTeam.banner);
+      const avatar = await this.staticFileService.convertAndSaveImage(
+        createTeam.avatar,
+      );
+      const banner = await this.staticFileService.convertAndSaveImage(
+        createTeam.banner,
+      );
 
       const teamFromDb = await this.teamModel.create({
         name: createTeam.name,
@@ -54,10 +57,12 @@ export class TeamService {
         members: [createTeam.leader],
       });
 
-      await this.eventEmmiter.emitAsync(CREATE_TEAM_EVENT, {
+      const teamAccessFromDb = await this.teamAccessService.create({
         userId: createTeam.leader,
         teamId: teamFromDb.id,
-      } as TCreateTeamPayload);
+        teamAccessStatus: TeamAccessStatus.ACTIVE,
+        teamRole: TeamRole.LEADER,
+      });
 
       const chat = await this.teamChatService.create(teamFromDb._id.toString());
       await this.teamModel.findByIdAndUpdate(
@@ -66,7 +71,7 @@ export class TeamService {
         { new: true },
       );
 
-      return await teamFromDb.populate(['members', 'leader', 'projects']);
+      return teamAccessFromDb;
     } catch (error) {
       if (error instanceof MongoError && error.code === 11000) {
         throw new BadRequestException('Team with this name already exist');
@@ -80,29 +85,15 @@ export class TeamService {
 
   async findById(id: string) {
     try {
-      return await this.teamModel
-        .findById(id)
-        .populate(['members', 'leader', 'projects', 'teamChat'])
-        .exec();
+      return await this.teamModel.findById(id);
     } catch (error) {
       if (error instanceof mongoose.Error.DocumentNotFoundError) {
         throw new BadRequestException(error.message);
+      } else if (error instanceof mongoose.Error.CastError) {
+        throw new BadRequestException('Invalid message ID format.');
+      } else {
+        throw new InternalServerErrorException();
       }
-    }
-  }
-
-  async findAllTeamByUserId(userId: string) {
-    try {
-      const result = await this.teamModel
-        .find({ members: userId })
-        .populate(['members', 'leader', 'projects'])
-        .exec();
-      if (!result || result.length === 0) {
-        throw new BadRequestException('No teams found for this user');
-      }
-      return result;
-    } catch (error) {
-      throw new BadRequestException(error.message);
     }
   }
 
@@ -118,7 +109,7 @@ export class TeamService {
       const totalCount = await this.teamModel.countDocuments(condition);
       const items = await this.teamModel
         .find(condition)
-        .populate(['members', 'leader', 'projects'])
+        .populate(['leader', 'projects'])
         .skip((page - 1) * pageSize)
         .limit(pageSize)
         .exec();
@@ -126,36 +117,6 @@ export class TeamService {
       await this.cacheManager.set(cacheKey, result);
     }
     return result;
-  }
-
-  private async convertAndSaveImage(base64?: string) {
-    if (base64) {
-      const fileName = `${uuid.v4()}.jpg`;
-      const data = base64.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(data, 'base64');
-
-      const uploadPath = path.join(`${process.cwd()}/src`, 'uploads');
-
-      await writeFile(path.join(uploadPath, fileName), buffer);
-      return fileName;
-    }
-    return '';
-  }
-
-  @OnEvent(ADD_USER_TO_TEAM_EVENT, { async: true })
-  private async addUserToTeamHandler({
-    teamId,
-    userId,
-  }: TAddUserToTeamPayload) {
-    try {
-      await this.teamModel.findByIdAndUpdate(teamId, {
-        $addToSet: { members: userId },
-      });
-    } catch (error) {
-      if (error instanceof mongoose.Error.DocumentNotFoundError) {
-        throw new BadRequestException(error.message);
-      }
-    }
   }
 
   @OnEvent(CHECK_TEAM_EXISTENCE_EVENT, { async: true })

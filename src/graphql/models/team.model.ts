@@ -24,9 +24,6 @@ export class Team {
   @Field(() => User)
   leader: User;
 
-  @Field(() => [User])
-  members: User[];
-
   @Field(() => TeamStatus)
   status: TeamStatus;
 

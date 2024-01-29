@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
-import { Team } from './team';
+import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -36,9 +35,6 @@ export class User {
     token: string;
     expiresAt: Date;
   };
-
-  @Prop({ type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Team' }] })
-  teams: Team[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

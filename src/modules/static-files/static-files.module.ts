@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { StaticFilesService } from './services/static-files/static-files.service';
 
 @Module({
   imports: [
@@ -9,5 +10,7 @@ import { join } from 'path';
       serveRoot: '/uploads',
     }),
   ],
+  providers: [StaticFilesService],
+  exports: [StaticFilesService],
 })
 export class StaticFilesModule {}
